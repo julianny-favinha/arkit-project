@@ -26,6 +26,8 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
     var statusMessage = ""
     var trackingStatus = ""
     
+    var lastSelectedNode: SCNNode?
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -33,7 +35,6 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
         deckSettings = customTabBarController.deckSettings
         
         initSceneView()
-        initARSession()
         initGestureRecognizers()
     }
     
@@ -47,10 +48,6 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
         super.viewWillDisappear(animated)
         
         sceneView.session.pause()
-    }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
     }
 
     // MARK: - Intializers
@@ -178,13 +175,14 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
         sceneView.addGestureRecognizer(tapGestureRecognizer)
     }
     
+    // function to add a card, if a plane already exists. If not, plane is added to the scene
     @objc func tapGesture(sender: UITapGestureRecognizer) {
         let hitResults = sceneView.hitTest(sender.location(in: sceneView), options: nil)
         
         if let hitResult = hitResults.first {
             let hitNode = hitResult.node
             if let name = hitNode.name, name == "card" {
-                // tap on card
+                // user tapped on card
             } else {
                 let tappedSceneView = sender.view as! ARSCNView
                 let tapLocation = sender.location(in: tappedSceneView)
@@ -248,9 +246,12 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
         if let hitResult = hitResults.first {
             let selectedNode = hitResult.node
             
+            // translate only "card" nodes
             if selectedNode.name == "card" {
                 let presentationNode = selectedNode.presentation
                 selectedNode.transform = SCNMatrix4Translate(presentationNode.transform, translateX, 0, translateZ)
+                
+                lastSelectedNode = selectedNode
             }
         }
     }
@@ -275,18 +276,17 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
     // MARK: - Plane detection
     // =======================
     
-    // This delegate method gets called whenever the node corresponding to a new AR anchor is added to the scene.
+    // The node corresponding to a new AR anchor is added to the scene.
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
         guard let planeAnchor = anchor as? ARPlaneAnchor else { return }
         
         drawPlaneNode(on: node, for: planeAnchor)
     }
     
-    // This delegate method gets called whenever the node correspondinf to an existing AR anchor is updated.
+    // The node correspondinf to an existing AR anchor is updated.
     func renderer(_ renderer: SCNSceneRenderer, didUpdate node: SCNNode, for anchor: ARAnchor) {
         guard let planeAnchor = anchor as? ARPlaneAnchor else { return }
         
-        // Remove any children this node may have.
         node.enumerateChildNodes { (childNode, _) in
             childNode.removeFromParentNode()
         }
@@ -312,7 +312,6 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
             planeNode.name = "horizontal"
         }
         
-        // Add the plane node to the scene.
         node.addChildNode(planeNode)
         
         /// Add plane node to the scene
@@ -323,7 +322,7 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
         appState = .readyToBattle
     }
 
-    // This delegate method gets called whenever the node corresponding to an existing AR anchor is removed.
+    // The node corresponding to an existing AR anchor is removed.
     func renderer(_ renderer: SCNSceneRenderer, didRemove node: SCNNode, for anchor: ARAnchor) {
         guard anchor is ARPlaneAnchor else { return }
         
@@ -335,14 +334,25 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
 }
 
 extension FieldViewController: SCNPhysicsContactDelegate {
+    // Battle of two cards
     func physicsWorld(_ world: SCNPhysicsWorld, didBegin contact: SCNPhysicsContact) {
         let nodeA: Card? = deckSettings.getCard(name: (contact.nodeA.parent?.name!)!)
         let nodeB: Card? = deckSettings.getCard(name: (contact.nodeB.parent?.name!)!)
         
-        if (nodeA?.power)! > (nodeB?.resistence)! {
-            runAction(node: contact.nodeB)
-        } else if (nodeA?.power)! < (nodeB?.resistence)! {
-            runAction(node: contact.nodeA)
+        if let selectedNode = lastSelectedNode {
+            if selectedNode.parent?.name! == nodeA?.fileName {
+                if (nodeA?.power)! > (nodeB?.resistence)! {
+                    runAction(node: contact.nodeB)
+                } else if (nodeA?.power)! < (nodeB?.resistence)! {
+                    runAction(node: contact.nodeA)
+                }
+            } else {
+                if (nodeB?.power)! > (nodeA?.resistence)! {
+                    runAction(node: contact.nodeA)
+                } else if (nodeB?.power)! < (nodeA?.resistence)! {
+                    runAction(node: contact.nodeB)
+                }
+            }
         }
     }
     
