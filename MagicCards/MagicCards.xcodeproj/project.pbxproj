@@ -12,6 +12,8 @@
 		B133CB7220FCE4320009313C /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B133CB7020FCE4320009313C /* Main.storyboard */; };
 		B133CB7420FCE4340009313C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B133CB7320FCE4340009313C /* Assets.xcassets */; };
 		B133CB7720FCE4340009313C /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B133CB7520FCE4340009313C /* LaunchScreen.storyboard */; };
+		B136EE6521025F4D0079ED24 /* spark.png in Resources */ = {isa = PBXBuildFile; fileRef = B136EE6321025F4D0079ED24 /* spark.png */; };
+		B136EE6621025F4D0079ED24 /* Fire.scnp in Resources */ = {isa = PBXBuildFile; fileRef = B136EE6421025F4D0079ED24 /* Fire.scnp */; };
 		B1A8F32D20FCF2D700F42752 /* DeckSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1A8F32C20FCF2D700F42752 /* DeckSettings.swift */; };
 		B1A8F32F20FCF59000F42752 /* DeckViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1A8F32E20FCF59000F42752 /* DeckViewController.swift */; };
 		B1A8F33120FCF6A800F42752 /* CustomTabBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1A8F33020FCF6A800F42752 /* CustomTabBarController.swift */; };
@@ -27,6 +29,8 @@
 		B133CB7320FCE4340009313C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B133CB7620FCE4340009313C /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		B133CB7820FCE4340009313C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B136EE6321025F4D0079ED24 /* spark.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = spark.png; sourceTree = "<group>"; };
+		B136EE6421025F4D0079ED24 /* Fire.scnp */ = {isa = PBXFileReference; lastKnownFileType = file.scp; path = Fire.scnp; sourceTree = "<group>"; };
 		B1A8F32C20FCF2D700F42752 /* DeckSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeckSettings.swift; sourceTree = "<group>"; };
 		B1A8F32E20FCF59000F42752 /* DeckViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeckViewController.swift; sourceTree = "<group>"; };
 		B1A8F33020FCF6A800F42752 /* CustomTabBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabBarController.swift; sourceTree = "<group>"; };
@@ -64,6 +68,7 @@
 		B133CB6920FCE4320009313C /* MagicCards */ = {
 			isa = PBXGroup;
 			children = (
+				B136EE5E210250510079ED24 /* Particles */,
 				B133CB6A20FCE4320009313C /* AppDelegate.swift */,
 				B133CB6C20FCE4320009313C /* art.scnassets */,
 				B133CB7020FCE4320009313C /* Main.storyboard */,
@@ -77,6 +82,15 @@
 				B1A8F33420FD125300F42752 /* FieldViewController.swift */,
 			);
 			path = MagicCards;
+			sourceTree = "<group>";
+		};
+		B136EE5E210250510079ED24 /* Particles */ = {
+			isa = PBXGroup;
+			children = (
+				B136EE6321025F4D0079ED24 /* spark.png */,
+				B136EE6421025F4D0079ED24 /* Fire.scnp */,
+			);
+			path = Particles;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -137,6 +151,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B136EE6521025F4D0079ED24 /* spark.png in Resources */,
+				B136EE6621025F4D0079ED24 /* Fire.scnp in Resources */,
 				B133CB6D20FCE4320009313C /* art.scnassets in Resources */,
 				B133CB7720FCE4340009313C /* LaunchScreen.storyboard in Resources */,
 				B133CB7420FCE4340009313C /* Assets.xcassets in Resources */,

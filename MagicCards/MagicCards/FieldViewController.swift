@@ -213,7 +213,7 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
         let prevLocation = touch.previousLocation(in: sceneView)
         var translateX: Float = 0.0
         var translateZ: Float = 0.0
-        let step: Float = 0.005
+        let step: Float = 0.0005
         
         if location.x > prevLocation.x {
             //finger touch went right
@@ -330,9 +330,21 @@ extension FieldViewController: SCNPhysicsContactDelegate {
         let nodeB: Card? = deckSettings.getCard(name: (contact.nodeB.parent?.name!)!)
         
         if (nodeA?.power)! > (nodeB?.resistence)! {
-            contact.nodeB.removeFromParentNode()
-        } else if (nodeA?.power)! > (nodeB?.resistence)! {
-            contact.nodeA.removeFromParentNode()
+            runAction(node: contact.nodeB)
+        } else if (nodeA?.power)! < (nodeB?.resistence)! {
+            runAction(node: contact.nodeA)
         }
+    }
+    
+    private func runAction(node: SCNNode) {
+        let particleSystem: SCNParticleSystem? = SCNParticleSystem(named: "Fire", inDirectory: nil)
+        
+        let particleNode = node.childNode(withName: "particle", recursively: true)
+        particleNode?.addParticleSystem(particleSystem!)
+        
+        let action = SCNAction.fadeOut(duration: 1.5)
+        let remove = SCNAction.removeFromParentNode()
+        let animation = SCNAction.sequence([action, remove])
+        node.runAction(animation)
     }
 }
