@@ -26,9 +26,6 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
     var statusMessage = ""
     var trackingStatus = ""
     
-    var selectedNode: SCNNode!
-    var zCoord: Float!
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -172,12 +169,10 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
         let hitResults = sceneView.hitTest(sender.location(in: sceneView), options: nil)
         
         if let hitResult = hitResults.first {
-            // select card
             let hitNode = hitResult.node
             if let name = hitNode.name, name == "card" {
-                toggleSelection(hitNode)
+//                toggleSelection(hitNode)
             } else {
-                // plot plane
                 let tappedSceneView = sender.view as! ARSCNView
                 let tapLocation = sender.location(in: tappedSceneView)
                 
@@ -211,14 +206,13 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesMoved(touches, with: event)
         
-        guard let touch = touches.first,
-            let selectedNode = self.selectedNode else { return }
+        guard let touch = touches.first else { return }
         
         let location = touch.location(in: sceneView)
         let prevLocation = touch.previousLocation(in: sceneView)
         var translateX: Float = 0.0
         var translateZ: Float = 0.0
-        let step: Float = 0.01
+        let step: Float = 0.005
         
         if location.x > prevLocation.x {
             //finger touch went right
@@ -236,10 +230,18 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
             translateZ -= step
         }
         
-        let presentationNode = selectedNode.presentation
-        let translation = SCNMatrix4Translate(presentationNode.transform, translateX, 0, translateZ)
+        let hitResults = sceneView.hitTest(touch.location(in: sceneView), options: nil)
         
-        selectedNode.transform = translation
+        if let hitResult = hitResults.first {
+            let selectedNode = hitResult.node
+            
+            if selectedNode.name == "card" {
+                let presentationNode = selectedNode.presentation
+                let translation = SCNMatrix4Translate(presentationNode.transform, translateX, 0, translateZ)
+            
+                selectedNode.transform = translation
+            }
+        }
     }
     
     // MARK: - AR session error management
@@ -287,9 +289,7 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
             width: CGFloat(planeAnchor.extent.x),
             height: CGFloat(planeAnchor.extent.z)
         ))
-        planeNode.position = SCNVector3(planeAnchor.center.x,
-                                        planeAnchor.center.y,
-                                        planeAnchor.center.z)
+        planeNode.position = SCNVector3(planeAnchor.center.x, planeAnchor.center.y, planeAnchor.center.z)
         planeNode.geometry?.firstMaterial?.isDoubleSided = true
         
         // Align the plane with the anchor.
@@ -328,89 +328,89 @@ extension FieldViewController {
     /// Check if there is any node selected
     ///
     /// - Returns: true if exists a node selected
-    fileprivate func hasSelected() -> Bool {
-        return self.selectedNode != nil
-    }
+//    fileprivate func hasSelected() -> Bool {
+//        return self.selectedNode != nil
+//    }
     
     /// Check if the node is the selected node
     ///
     /// - Parameter node: node to check
     /// - Returns: true if the same node is selected
-    func isSelected(node: SCNNode) -> Bool {
-        return node == self.selectedNode
-    }
+//    func isSelected(node: SCNNode) -> Bool {
+//        return node == self.selectedNode
+//    }
     
     /// Select the node by changing its color to 50% transparent
     ///
     /// - Parameter node: node to be selected
-    fileprivate func select(node: SCNNode) {
-        self.selectedNode = node
-        
-        if let color = node.geometry?.firstMaterial?.diffuse.contents as? UIColor,
-            let rgba = color.cgColor.components {
-            
-            let newColor = UIColor(red: rgba[0],
-                                   green: rgba[1],
-                                   blue: rgba[1],
-                                   alpha: 0.5)
-                
-            node.geometry?.firstMaterial?.diffuse.contents = newColor
-        }
-        
-        // stop physics to allow movement
-        if let physicsBody = node.physicsBody {
-            physicsBody.type = .kinematic
-        }
-    }
+//    fileprivate func select(node: SCNNode) {
+//        self.selectedNode = node
+//
+//        if let color = node.geometry?.firstMaterial?.diffuse.contents as? UIColor,
+//            let rgba = color.cgColor.components {
+//
+//            let newColor = UIColor(red: rgba[0],
+//                                   green: rgba[1],
+//                                   blue: rgba[1],
+//                                   alpha: 0.5)
+//
+//            node.geometry?.firstMaterial?.diffuse.contents = newColor
+//        }
+//
+//        // stop physics to allow movement
+//        if let physicsBody = node.physicsBody {
+//            physicsBody.type = .kinematic
+//        }
+//    }
     
     
     /// deselect the current node by restoring color alpha to 100%
-    fileprivate func deselect() {
-        if let node = self.selectedNode {
-            
-            if let color = node.geometry?.firstMaterial?.diffuse.contents as? UIColor,
-                let rgba = color.cgColor.components {
-                
-                let newColor = UIColor(red: rgba[0],
-                                       green: rgba[1],
-                                       blue: rgba[1],
-                                       alpha: 1.0)
-                
-                node.geometry?.firstMaterial?.diffuse.contents = newColor
-            }
-            
-            // start physics again
-            if let physicsBody = node.physicsBody {
-                physicsBody.type = .dynamic
-            }
-            
-            self.selectedNode = nil
-        }
-    }
+//    fileprivate func deselect() {
+//        if let node = self.selectedNode {
+//
+//            if let color = node.geometry?.firstMaterial?.diffuse.contents as? UIColor,
+//                let rgba = color.cgColor.components {
+//
+//                let newColor = UIColor(red: rgba[0],
+//                                       green: rgba[1],
+//                                       blue: rgba[1],
+//                                       alpha: 1.0)
+//
+//                node.geometry?.firstMaterial?.diffuse.contents = newColor
+//            }
+//
+//            // start physics again
+//            if let physicsBody = node.physicsBody {
+//                physicsBody.type = .dynamic
+//            }
+//
+//            self.selectedNode = nil
+//        }
+//    }
     
     
     /// Toggle the selection. Just one node is selected at a time
     ///
     /// - Parameter hitNode: node to toggle the selection
-    fileprivate func toggleSelection(_ hitNode: SCNNode) {
-        
-        // if tapped node that is already selected
-        if self.isSelected(node: hitNode) {
-            // just deselect it
-            self.deselect()
-        } else {
-            // ok this hitNode is not selected yet
-            // but let's check if has other node
-            // previously selected
-            if hasSelected() {
-                // other node is selected
-                // so deselect it
-                self.deselect()
-            }
-            
-            // select the new hit node
-            self.select(node: hitNode)
-        }
-    }
+//    fileprivate func toggleSelection(_ hitNode: SCNNode) {
+//
+//        // if tapped node that is already selected
+//        if self.isSelected(node: hitNode) {
+//            // just deselect it
+//            self.deselect()
+//        } else {
+//            // ok this hitNode is not selected yet
+//            // but let's check if has other node
+//            // previously selected
+//            if hasSelected() {
+//                // other node is selected
+//                // so deselect it
+//                self.deselect()
+//            }
+//
+//            // select the new hit node
+//            self.select(node: hitNode)
+//        }
+//    }
     
 }
