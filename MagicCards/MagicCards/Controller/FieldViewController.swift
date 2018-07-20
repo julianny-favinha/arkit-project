@@ -339,24 +339,22 @@ extension FieldViewController: SCNPhysicsContactDelegate {
         let nodeA: Card? = deckSettings.getCard(name: (contact.nodeA.parent?.name!)!)
         let nodeB: Card? = deckSettings.getCard(name: (contact.nodeB.parent?.name!)!)
         
-        if let selectedNode = lastSelectedNode {
-            if selectedNode.parent?.name! == nodeA?.fileName {
-                if (nodeA?.power)! > (nodeB?.resistence)! {
-                    runAction(node: contact.nodeB)
-                } else if (nodeA?.power)! < (nodeB?.resistence)! {
-                    runAction(node: contact.nodeA)
-                }
-            } else {
-                if (nodeB?.power)! > (nodeA?.resistence)! {
-                    runAction(node: contact.nodeA)
-                } else if (nodeB?.power)! < (nodeA?.resistence)! {
-                    runAction(node: contact.nodeB)
-                }
+        if let selectedNode = lastSelectedNode, selectedNode.parent?.name! == nodeA?.fileName {
+            if (nodeA?.power)! > (nodeB?.resistence)! {
+                runAnimation(node: contact.nodeB)
+            } else if (nodeA?.power)! < (nodeB?.resistence)! {
+                runAnimation(node: contact.nodeA)
+            }
+        } else {
+            if (nodeB?.power)! > (nodeA?.resistence)! {
+                runAnimation(node: contact.nodeA)
+            } else if (nodeB?.power)! < (nodeA?.resistence)! {
+                runAnimation(node: contact.nodeB)
             }
         }
     }
     
-    private func runAction(node: SCNNode) {
+    private func runAnimation(node: SCNNode) {
         let particleSystem: SCNParticleSystem? = SCNParticleSystem(named: "Fire", inDirectory: nil)
         
         let particleNode = node.childNode(withName: "particle", recursively: true)
