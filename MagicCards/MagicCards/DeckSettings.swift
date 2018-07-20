@@ -33,7 +33,7 @@ class CardNode: SCNNode {
     init(card: Card) {
         self.card = card
         super.init()
-        self.name = "Virtual object root node"
+        self.name = card.name
         
         let scene = SCNScene(named: "art.scnassets/card.scn")
         let child = (scene?.rootNode.childNode(withName: "card", recursively: false))!
@@ -77,6 +77,14 @@ class DeckSettings {
     func currentCardPiece() -> CardNode {
         let cardNode = CardNode(card: deck[card])
         return cardNode
+    }
+    
+    func getCard(name: String) -> Card? {
+        for card in deck where card.name == name {
+            return card
+        }
+        
+        return nil
     }
     
 }

@@ -46,6 +46,7 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
     
     func initSceneView() {
         sceneView.delegate = self
+        sceneView.scene.physicsWorld.contactDelegate = self
         sceneView.automaticallyUpdatesLighting = true
         sceneView.showsStatistics = true
         sceneView.preferredFramesPerSecond = 60
@@ -321,4 +322,17 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
         }
     }
     
+}
+
+extension FieldViewController: SCNPhysicsContactDelegate {
+    func physicsWorld(_ world: SCNPhysicsWorld, didBegin contact: SCNPhysicsContact) {
+        let nodeA: Card? = deckSettings.getCard(name: (contact.nodeA.parent?.name!)!)
+        let nodeB: Card? = deckSettings.getCard(name: (contact.nodeB.parent?.name!)!)
+        
+        if (nodeA?.power)! > (nodeB?.resistence)! {
+            contact.nodeB.removeFromParentNode()
+        } else if (nodeA?.power)! > (nodeB?.resistence)! {
+            contact.nodeA.removeFromParentNode()
+        }
+    }
 }
