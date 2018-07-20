@@ -9,7 +9,7 @@
 import UIKit
 import ARKit
 
-enum AppState: Int16 {
+enum AppState {
     case lookingForSurface
     case pointToSurface
     case readyToBattle
@@ -122,13 +122,13 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
     func updateStatusText() {
         switch appState {
         case .lookingForSurface:
-            statusMessage = "Scan the room with your device until the yellow dots appear."
+            statusMessage = "Scan the room with your device until the yellow dots appear and later the plane."
             sceneView.debugOptions = [ARSCNDebugOptions.showFeaturePoints]
         case .pointToSurface:
             statusMessage = "Point your device towards one of the detected surfaces."
             sceneView.debugOptions = []
         case .readyToBattle:
-            statusMessage = "Tap on the floor grid to place the card."
+            statusMessage = "Tap on the floor grid to place the card. Then move a card over the other."
             sceneView.debugOptions = []
         }
         
@@ -159,7 +159,7 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
     }
     
     // MARK: - Adding cards
-    // =====================================
+    // ====================
     
     func initGestureRecognizers() {
         let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(tapGesture))
@@ -172,7 +172,7 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
         if let hitResult = hitResults.first {
             let hitNode = hitResult.node
             if let name = hitNode.name, name == "card" {
-//                toggleSelection(hitNode)
+                // tap on card
             } else {
                 let tappedSceneView = sender.view as! ARSCNView
                 let tapLocation = sender.location(in: tappedSceneView)
@@ -238,9 +238,7 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
             
             if selectedNode.name == "card" {
                 let presentationNode = selectedNode.presentation
-                let translation = SCNMatrix4Translate(presentationNode.transform, translateX, 0, translateZ)
-            
-                selectedNode.transform = translation
+                selectedNode.transform = SCNMatrix4Translate(presentationNode.transform, translateX, 0, translateZ)
             }
         }
     }
