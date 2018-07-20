@@ -26,6 +26,9 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
     var statusMessage = ""
     var trackingStatus = ""
     
+    var selectedNode: SCNNode!
+    var zCoord: Float!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -74,9 +77,7 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
     
     func resetARsession() {
         let config = createARConfiguration()
-        sceneView.session.run(config,
-                              options: [.resetTracking,
-                                        .removeExistingAnchors])
+        sceneView.session.run(config, options: [.resetTracking, .removeExistingAnchors])
         appState = .lookingForSurface
     }
     
@@ -155,81 +156,100 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
                 
             }
         }
+        
         return false
     }
     
-    // MARK: - Adding and removing cards
+    // MARK: - Adding cards
     // =====================================
     
     func initGestureRecognizers() {
-        let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(handleScreenTap))
+        let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(tapGesture))
         sceneView.addGestureRecognizer(tapGestureRecognizer)
-        
-        sceneView.addGestureRecognizer(UIPanGestureRecognizer(target: self, action: #selector(panGesture(_:))))
     }
     
-    @objc func handleScreenTap(sender: UITapGestureRecognizer) {
-        // Find out where the user tapped on the screen.
-        let tappedSceneView = sender.view as! ARSCNView
-        let tapLocation = sender.location(in: tappedSceneView)
+    @objc func tapGesture(sender: UITapGestureRecognizer) {
+        let hitResults = sceneView.hitTest(sender.location(in: sceneView), options: nil)
         
-        // Find all the detected planes that would intersect with
-        // a line extending from where the user tapped the screen.
-        let planeIntersections = tappedSceneView.hitTest(tapLocation, types: [.existingPlaneUsingGeometry])
-        
-        // If the closest of those planes is horizontal,
-        // put the current furniture item on it.
-        if !planeIntersections.isEmpty {
-            let firstHitTestResult = planeIntersections.first!
-            guard let planeAnchor = firstHitTestResult.anchor as? ARPlaneAnchor else { return }
-            if planeAnchor.alignment == .horizontal {
-                addCard(hitTestResult: firstHitTestResult)
-            }
-        }
-    }
-    
-    @objc func panGesture(_ gesture: UIPanGestureRecognizer) {
-        gesture.minimumNumberOfTouches = 1
-        
-        let results = self.sceneView.hitTest(gesture.location(in: gesture.view), types: ARHitTestResult.ResultType.featurePoint)
-        
-        guard let result: ARHitTestResult = results.first else {
-            return
-        }
-        
-        let hits = self.sceneView.hitTest(gesture.location(in: gesture.view), options: nil)
-        if let tappedNode = hits.first?.node {
-            if (CardNode.isNodePartOfCardNode(tappedNode)) {
-                let position = SCNVector3Make(result.worldTransform.columns.3.x, result.worldTransform.columns.3.y, result.worldTransform.columns.3.z)
-                tappedNode.position = position
+        if let hitResult = hitResults.first {
+            // select card
+            let hitNode = hitResult.node
+            if let name = hitNode.name, name == "card" {
+                toggleSelection(hitNode)
+            } else {
+                // plot plane
+                let tappedSceneView = sender.view as! ARSCNView
+                let tapLocation = sender.location(in: tappedSceneView)
+                
+                // Find all the detected planes that would intersect with a line extending from where the user tapped the screen.
+                let planeIntersections = tappedSceneView.hitTest(tapLocation, types: [.existingPlaneUsingGeometry])
+                
+                // If the closest of those planes is horizontal, put the current card item on it.
+                if !planeIntersections.isEmpty {
+                    let firstHitTestResult = planeIntersections.first!
+                    guard let planeAnchor = firstHitTestResult.anchor as? ARPlaneAnchor else { return }
+                    if planeAnchor.alignment == .horizontal {
+                        addCard(hitTestResult: firstHitTestResult)
+                    }
+                }
             }
         }
     }
     
     func addCard(hitTestResult: ARHitTestResult) {
-        // Get the real-world position corresponding to
-        // where the user tapped on the screen.
+        // Get the real-world position corresponding to where the user tapped on the screen.
         let transform = hitTestResult.worldTransform
-        let positionColumn = transform.columns.3 // 4th column; column index starts at 0
+        let positionColumn = transform.columns.3
         let initialPosition = SCNVector3(positionColumn.x, positionColumn.y, positionColumn.z)
         
-        // Get the current card item, correct its position if necessary,
-        // and add it to the scene.
+        // Get the current card item, correct its position if necessary, and add it to the scene.
         let node = deckSettings.currentCardPiece()
         node.position = initialPosition
         sceneView.scene.rootNode.addChildNode(node)
+    }
+    
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesMoved(touches, with: event)
+        
+        guard let touch = touches.first,
+            let selectedNode = self.selectedNode else { return }
+        
+        let location = touch.location(in: sceneView)
+        let prevLocation = touch.previousLocation(in: sceneView)
+        var translateX: Float = 0.0
+        var translateZ: Float = 0.0
+        let step: Float = 0.01
+        
+        if location.x > prevLocation.x {
+            //finger touch went right
+            translateX += step
+        } else {
+            //finger touch went left
+            translateX -= step
+        }
+        
+        if location.y > prevLocation.y {
+            //finger touch went upwards
+            translateZ += step
+        } else {
+            //finger touch went downwards
+            translateZ -= step
+        }
+        
+        let presentationNode = selectedNode.presentation
+        let translation = SCNMatrix4Translate(presentationNode.transform, translateX, 0, translateZ)
+        
+        selectedNode.transform = translation
     }
     
     // MARK: - AR session error management
     // ===================================
     
     func session(_ session: ARSession, didFailWithError error: Error) {
-        // Present an error message to the user
         trackingStatus = "AR session failure: \(error)"
     }
     
     func sessionWasInterrupted(_ session: ARSession) {
-        // Inform the user that the session has been interrupted, for example, by presenting an overlay
         trackingStatus = "AR session was interrupted!"
     }
     
@@ -242,21 +262,15 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
     // MARK: - Plane detection
     // =======================
     
-    // This delegate method gets called whenever the node corresponding to
-    // a new AR anchor is added to the scene.
+    // This delegate method gets called whenever the node corresponding to a new AR anchor is added to the scene.
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
-        // We only want to deal with plane anchors, which encapsulate
-        // the position, orientation, and size, of a detected surface.
         guard let planeAnchor = anchor as? ARPlaneAnchor else { return }
         
-        // Draw the appropriate plane over the detected surface.
         drawPlaneNode(on: node, for: planeAnchor)
     }
     
-    // This delegate method gets called whenever the node correspondinf to
-    // an existing AR anchor is updated.
+    // This delegate method gets called whenever the node correspondinf to an existing AR anchor is updated.
     func renderer(_ renderer: SCNSceneRenderer, didUpdate node: SCNNode, for anchor: ARAnchor) {
-        // Once again, we only want to deal with plane anchors.
         guard let planeAnchor = anchor as? ARPlaneAnchor else { return }
         
         // Remove any children this node may have.
@@ -264,13 +278,11 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
             childNode.removeFromParentNode()
         }
         
-        // Update the plane over this surface.
         drawPlaneNode(on: node, for: planeAnchor)
     }
     
     func drawPlaneNode(on node: SCNNode, for planeAnchor: ARPlaneAnchor) {
-        // Create a plane node with the same position and size
-        // as the detected plane.
+        // Create a plane node with the same position and size as the detected plane.
         let planeNode = SCNNode(geometry: SCNPlane(
             width: CGFloat(planeAnchor.extent.x),
             height: CGFloat(planeAnchor.extent.z)
@@ -292,7 +304,7 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
         // Add the plane node to the scene.
         node.addChildNode(planeNode)
         
-        /// Add floor node to the scene
+        /// Add plane node to the scene
         let scene = SCNScene(named: "art.scnassets/card.scn")
         let plane = (scene?.rootNode.childNode(withName: "plane", recursively: false))!
         node.addChildNode(plane)
@@ -300,15 +312,104 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
         appState = .readyToBattle
     }
 
-    // This delegate method gets called whenever the node corresponding to
-    // an existing AR anchor is removed.
+    // This delegate method gets called whenever the node corresponding to an existing AR anchor is removed.
     func renderer(_ renderer: SCNSceneRenderer, didRemove node: SCNNode, for anchor: ARAnchor) {
-        // We only want to deal with plane anchors.
         guard anchor is ARPlaneAnchor else { return }
         
-        // Remove any children this node may have.
         node.enumerateChildNodes { (childNode, _) in
             childNode.removeFromParentNode()
+        }
+    }
+    
+}
+
+extension FieldViewController {
+    
+    /// Check if there is any node selected
+    ///
+    /// - Returns: true if exists a node selected
+    fileprivate func hasSelected() -> Bool {
+        return self.selectedNode != nil
+    }
+    
+    /// Check if the node is the selected node
+    ///
+    /// - Parameter node: node to check
+    /// - Returns: true if the same node is selected
+    func isSelected(node: SCNNode) -> Bool {
+        return node == self.selectedNode
+    }
+    
+    /// Select the node by changing its color to 50% transparent
+    ///
+    /// - Parameter node: node to be selected
+    fileprivate func select(node: SCNNode) {
+        self.selectedNode = node
+        
+        if let color = node.geometry?.firstMaterial?.diffuse.contents as? UIColor,
+            let rgba = color.cgColor.components {
+            
+            let newColor = UIColor(red: rgba[0],
+                                   green: rgba[1],
+                                   blue: rgba[1],
+                                   alpha: 0.5)
+                
+            node.geometry?.firstMaterial?.diffuse.contents = newColor
+        }
+        
+        // stop physics to allow movement
+        if let physicsBody = node.physicsBody {
+            physicsBody.type = .kinematic
+        }
+    }
+    
+    
+    /// deselect the current node by restoring color alpha to 100%
+    fileprivate func deselect() {
+        if let node = self.selectedNode {
+            
+            if let color = node.geometry?.firstMaterial?.diffuse.contents as? UIColor,
+                let rgba = color.cgColor.components {
+                
+                let newColor = UIColor(red: rgba[0],
+                                       green: rgba[1],
+                                       blue: rgba[1],
+                                       alpha: 1.0)
+                
+                node.geometry?.firstMaterial?.diffuse.contents = newColor
+            }
+            
+            // start physics again
+            if let physicsBody = node.physicsBody {
+                physicsBody.type = .dynamic
+            }
+            
+            self.selectedNode = nil
+        }
+    }
+    
+    
+    /// Toggle the selection. Just one node is selected at a time
+    ///
+    /// - Parameter hitNode: node to toggle the selection
+    fileprivate func toggleSelection(_ hitNode: SCNNode) {
+        
+        // if tapped node that is already selected
+        if self.isSelected(node: hitNode) {
+            // just deselect it
+            self.deselect()
+        } else {
+            // ok this hitNode is not selected yet
+            // but let's check if has other node
+            // previously selected
+            if hasSelected() {
+                // other node is selected
+                // so deselect it
+                self.deselect()
+            }
+            
+            // select the new hit node
+            self.select(node: hitNode)
         }
     }
     

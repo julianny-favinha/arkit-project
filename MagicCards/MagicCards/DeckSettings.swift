@@ -76,7 +76,6 @@ class DeckSettings {
     
     func currentCardPiece() -> CardNode {
         let cardNode = CardNode(card: deck[card])
-        print(cardNode.card.fileName)
         return cardNode
     }
     
