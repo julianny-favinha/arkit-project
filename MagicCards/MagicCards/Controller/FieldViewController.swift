@@ -36,6 +36,18 @@ class FieldViewController: UIViewController, ARSCNViewDelegate {
         initARSession()
         initGestureRecognizers()
     }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+
+        initARSession()
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        
+        sceneView.session.pause()
+    }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
